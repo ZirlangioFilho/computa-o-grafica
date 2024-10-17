@@ -8,53 +8,58 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Adicionando luz ambiente
+// luz ambiente
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambientLight);
 
-// Adicionando luz direcional
+// luz direcional
 const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-directionalLight.position.set(5, 5, 5).normalize();
+directionalLight.position.set(0, 10, 0).normalize();
 scene.add(directionalLight);
-
-
-const sphereGeometry = new THREE.SphereGeometry(0.5, 32, 32);
-const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-const cube = new THREE.Mesh(sphereGeometry, sphereMaterial);
-cube.position.set(0, 0, -6); // Posicionando no centro da cena
-scene.add(cube);
 
 const whiteCubeGeometry = new THREE.BoxGeometry(1, 1, 1);
 const whiteCubeMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
 const whiteCube = new THREE.Mesh(whiteCubeGeometry, whiteCubeMaterial);
-whiteCube.position.set(0, 0, -10); // Iniciando no z = -10
 
-// Ajustando a escala para transformar o cubo em um retângulo fino
-whiteCube.scale.set(0, 0, 2); // Largura e altura finas, comprimento maior
-
+whiteCube.scale.set(0, 0, 2); 
 whiteCube.rotation.y -= 0.5;
-// Posicionando no eixo Z
 scene.add(whiteCube);
 
 const loader = new GLTFLoader();
-loader.load('/modelos/Demo - Arm chair.gltf', function (gltf) {
+loader.load('/modelos/nave.gltf', function (gltf) {
     scene.add(gltf.scene);
-    // Adicionando referência ao modelo para rotação
     model = gltf.scene;
-    // Definindo a posição do modelo
-    model.rotation.set(0, -1.5, 0); // Substitua por suas coordenadas desejadas
+    model.rotation.set(0, -1.5, 0); 
+});
+
+loader.load('/modelos/sol/sol.gltf', function(gltf){
+    scene.add(gltf.scene)
+    sol = gltf.scene;
+    sol.position.set(0, 0, -5)
+}, undefined, function (error) {
+    console.error(error);
+});
+
+loader.load('/modelos/alien/alien.gltf', function(gltf){
+    scene.add(gltf.scene)
+    alien = gltf.scene;
+    alien.position.set(0, 0.3, -5)
 }, undefined, function (error) {
     console.error(error);
 });
 
 camera.position.z = 1;
 
-let model; // Variável para armazenar o modelo carregado
-let angle = 0; // Ângulo inicial
+let model; 
+let sol;
+let alien;
+let alienHeight = 0.3;
+
+let angle = 0; 
 const radius = 0.5; // Raio do círculo
 
-const cubes = []; // Array para armazenar os cubos
-const maxCubes = 100; // Limite máximo de cubos
+const cubes = []; 
+const maxCubes = 100; 
 
 let arrowLeft = false
 let arrowRight = false
@@ -62,24 +67,25 @@ let arrowRight = false
 let a = false
 let d = false
 
+let direction = 1; 
+let maxHeight = 0;
+let minHeight = -5; 
+let speed = 0.03
+
 function createCube(position) {
-    if (cubes.length >= maxCubes) return; // Não criar mais cubos se atingir o limite
+    if (cubes.length >= maxCubes) return; 
 
     const geometry = new THREE.BoxGeometry(1, 1, 1);
     const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
     const cube = new THREE.Mesh(geometry, material);
+    cube.scale.set(0.05, 0.05, 2); 
     
-    // Ajustando a escala para transformar o cubo em um retângulo fino
-    cube.scale.set(0.05, 0.05, 2); // Largura e altura finas, comprimento maior
-    
-    // Posicionando o cubo em uma posição aleatória ou fornecida
     if (position) {
         cube.position.copy(position);
     } else {
         cube.position.set(
-            (Math.random() - 0.5) * 20, // Posição X aleatória
-            (Math.random() - 0.5) * 20, // Posição Y aleatória
-            -10 // Posição Z inicial
+            (Math.random() - 0.5) * 20, // Posição X 
+            (Math.random() - 0.5) * 20, -10 // Posição Y e Z 
         );
     }
     
@@ -87,37 +93,39 @@ function createCube(position) {
     cubes.push(cube);
 }
 
-// Função para multiplicar cubos a cada segundo
+
 setInterval(() => {
-    // Criar múltiplos novos cubos
-    for (let i = 0; i < 10; i++) { // Ajuste o número 2 para criar mais cubos
+    for (let i = 0; i < 10; i++) { 
         createCube();
     }
-    
-    // Cada cubo existente cria múltiplos novos cubos
+    // Cada cubo existente cria múltiplos cubos
     cubes.forEach(cube => {
-        for (let i = 0; i < 1; i++) { // Ajuste o número 1 para criar mais cubos por cubo existente
+        for (let i = 0; i < 1; i++) { 
             createCube(cube.position);
         }
     });
-}, 2000); // Aumente o intervalo para 2 segundos
+}, 200); 
 
 function animate() {
 
     if (model) {
-   
         model.rotation.x += 0.5;
         model.rotation.z += 0.5;
+
     }
     if(arrowLeft){
         angle -= 0.05; 
         model.position.x = Math.cos(angle) * radius;
         model.position.y = Math.sin(angle) * radius;
+        alien.position.x = model.position.x;
+        alien.position.y = model.position.y + alienHeight; 
 	}else
 	if(arrowRight){
 		angle += 0.05; 
         model.position.x = Math.cos(angle) * radius;
         model.position.y = Math.sin(angle) * radius;
+        alien.position.x = model.position.x;
+        alien.position.y = model.position.y + alienHeight; 
 	}else
     if(a){
         camera.rotation.y -= 0.01
@@ -128,13 +136,23 @@ function animate() {
         camera.position.x += 0.05
     }
 
-    // Movendo os cubos brancos em direção à tela
+    if(alien){
+        alien.position.z += speed * direction;
+        if(alien.position.z >= maxHeight){
+            direction = -1;
+        }else if(alien.position.z <= minHeight){
+            direction = 1;
+        }
+    }
+    
+   
+
+    // Movendo os cubos brancos em direção a tela
     for (let i = cubes.length - 1; i >= 0; i--) {
         const cube = cubes[i];
         if (cube.position.z < 5) {
-            cube.position.z += 0.1; // Ajuste a velocidade conforme necessário
+            cube.position.z += 0.1; // Ajuste a velocidade
         } else {
-            // Remover cubos que saíram do campo de visão
             scene.remove(cube);
             cubes.splice(i, 1);
         }
